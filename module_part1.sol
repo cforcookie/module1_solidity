@@ -10,6 +10,11 @@ contract module1 {
         bool buyer_status;
     }
     
+    struct worker {
+        uint id;
+        address magazin;
+    }
+    
     struct Bank {
         bytes32 login;
         bytes32 password;
@@ -51,20 +56,29 @@ contract module1 {
     
     mapping (address => user) public true_user;
     
-    mapping (address => address) public magazin_worker;
+    mapping (address => worker) public magazin_worker;
     mapping (address => magazin) public true_magazin;
     mapping (address => bool) public magazin_status;
-    
+    mapping (address => uint) public magazin_zaim_id;
     
     mapping (address => Bank) public true_bank;
     mapping (address => bool) public bank_status;
     
-    
+    address[] public workers_list;
     Application[] public applications;
     Application_zaim[] public application_zaim;
     
     constructor() {
         
+    }
+    
+    function login(bytes32 login, bytes32 password) public view returns(bool) {
+        if (true_user[msg.sender].login == login && true_user[msg.sender].password == password) {
+            return (true);
+        }
+        else {
+            return (false);
+        }
     }
     
     function register_user(bytes32 login, bytes32 password) public {
@@ -76,35 +90,41 @@ contract module1 {
         require(true_user[msg.sender].admin_status == true, "only admin can change this rule.");
         require(true_user[user].login == 0 && true_user[user].password == 0, "User no register in system");
         require(magazin_status[magazin] == true, "This address is not address magazin.");
-        require(magazin_worker[user] != magazin, "User allready work here.");
-        magazin_worker[user] = magazin;
+        require(magazin_worker[user].magazin != magazin, "User allready work here.");
+        uint id = workers_list.length;
+        workers_list[id] = user;
+        magazin_worker[user] = worker(id, magazin);
         true_user[user].buyer_status = false;
         true_user[user].seller_status = true;
     }
     
-    function add_worker_from_application(uint id) public {
+    function add_worker_from_application(uint id_application) public {
         require(true_user[msg.sender].admin_status == true, "only admin can change this rule.");
-        require(applications[id].status_application == true && applications[id].status_complited == false, "This application is end.");
-        if (applications[id].change_rule == true) {
-            magazin_worker[applications[id].user] = applications[id].magazin;
-            true_user[applications[id].user].buyer_status = false;
-            true_user[applications[id].user].seller_status = true;
-            applications[id].status_application == false;
-            applications[id].status_complited == true;
+        require(applications[id_application].status_application == true && applications[id_application].status_complited == false, "This application is end.");
+        if (applications[id_application].change_rule == true) {
+            uint id_user = workers_list.length;
+            workers_list[id_user] = applications[id_application].user;
+            magazin_worker[applications[id_application].user] = worker(id_user, applications[id_application].magazin);
+            true_user[applications[id_application].user].buyer_status = false;
+            true_user[applications[id_application].user].seller_status = true;
+            applications[id_application].status_application == false;
+            applications[id_application].status_complited == true;
         }
         else {
-            true_user[applications[id].user].seller_status = false;
-            true_user[applications[id].user].buyer_status = true;
-            applications[id].status_application == false;
-            applications[id].status_complited == true;
-            delete magazin_worker[applications[id].user];
+            true_user[applications[id_application].user].seller_status = false;
+            true_user[applications[id_application].user].buyer_status = true;
+            applications[id_application].status_application == false;
+            applications[id_application].status_complited == true;
+            
+            delete workers_list[magazin_worker[applications[id_application].user].id];
+            delete magazin_worker[applications[id_application].user];
         }
     }
     
     function create_application(address magazin, bool up_or_down) public {
         require(true_user[msg.sender].login != 0 && true_user[msg.sender].password != 0, "You not allready in sytem.");
         require(magazin_status[magazin] == true, "This address is not address magazin.");
-        require(magazin_worker[msg.sender] != magazin, "You allready work here.");
+        require(magazin_worker[msg.sender].magazin != magazin, "You allready work here.");
         require(get_view_application(msg.sender, magazin) == false, "You allready create this application.");
         applications.push(Application(applications.length, msg.sender, magazin, up_or_down, true, false));
         
@@ -135,25 +155,55 @@ contract module1 {
         true_magazin[magazin_address] = magazin(true_user[magazin_address].login, true_user[magazin_address].password, city);
         magazin_status[magazin_address] = true;
         if (zaim_anser == true) {
-            application_zaim.push(Application_zaim(application_zaim.length, magazin_address, true, false, false));
+            uint id_zaim = application_zaim.length;
+            application_zaim.push(Application_zaim(id_zaim, magazin_address, true, false, false));
+            magazin_zaim_id[magazin_address] = id_zaim;
         }
     }
     
+    function delete_magazin(address magazin) public {
+        require(magazin_status[magazin] == true, "This is not magazin.");
+        require(magazin_zaim_id[magazin] == 0, "Magazin have non returned zaim.");
+        for (uint i = 0; i < workers_list.length; i++) {
+            if (magazin_worker[workers_list[i]].magazin == magazin) {
+                true_user[workers_list[i]].seller_status = false;
+                true_user[workers_list[i]].buyer_status = true;
+                delete magazin_worker[workers_list[i]];
+                delete workers_list[i];
+            }
+            else {
+                continue;
+            }
+        }
+        delete true_magazin[magazin];
+        delete magazin_status[magazin];
+        
+    } 
+    
     function create_zaim() public {
         require(magazin_status[msg.sender] == true, "Only magazins can create zaim.");
-        application_zaim.push(Application_zaim(application_zaim.length, msg.sender, true, false, false));
+        require(magazin_zaim_id[msg.sender] == 0, "You have non returned zaim.");
+        uint id_zaim = application_zaim.length;
+        application_zaim.push(Application_zaim(id_zaim, msg.sender, true, false, false));
+        magazin_zaim_id[msg.sender] = id_zaim;
     }
     
-    function chanle_zaim(uint id) public {
-        require(application_zaim[id].magazin == msg.sender, "No you create this application.");
-        require(application_zaim[id].status_application == true && application_zaim[id].status_complited == false && application_zaim[id].returned_status == false);
-        delete application_zaim[id];
+    function chanle_zaim() public {
+        require(application_zaim[magazin_zaim_id[msg.sender]].magazin == msg.sender, "No you create this application.");
+        require(application_zaim[magazin_zaim_id[msg.sender]].status_application == true && application_zaim[magazin_zaim_id[msg.sender]].status_complited == false && application_zaim[magazin_zaim_id[msg.sender]].returned_status == false);
+        delete application_zaim[magazin_zaim_id[msg.sender]];
+        delete magazin_zaim_id[msg.sender];
     }
     
-    function zaim_magazin(address magazin) public {
-        
+    function zaim_magazin(uint id) public {
+        require(application_zaim[id].status_application == true, "Application not created.");
+        require(application_zaim[id].status_complited == false, "Application allready gived.");
         
     }
+    
+    
+    
+    
     
 }
 
