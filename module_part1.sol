@@ -24,15 +24,26 @@ contract module1 {
         bytes32 login;
         bytes32 password;
         string city;
-        
+        uint[] id_otsiv;
     }
     
-    struct otsiv {
+    struct Otsiv {
         uint id;
         address giver;
+        address magazin;
         string otsiv_user;
-        uint plus;
-        uint less;
+        address[] plus;
+        address[] less;
+        uint[] id_comments;
+    }
+    
+    struct Comment {
+        uint id;
+        address giver;
+        address magazin;
+        string otsiv_user;
+        address[] plus;
+        address[] less;
     }
     
     struct Application {
@@ -60,13 +71,16 @@ contract module1 {
     mapping (address => magazin) public true_magazin;
     mapping (address => bool) public magazin_status;
     mapping (address => uint) public magazin_zaim_id;
+    mapping (address => uint) public magazin_comments;
     
     mapping (address => Bank) public true_bank;
     mapping (address => bool) public bank_status;
     
     address[] public workers_list;
+    Otsiv[] public otsiv;
     Application[] public applications;
     Application_zaim[] public application_zaim;
+    
     
     constructor() {
         
@@ -152,7 +166,8 @@ contract module1 {
         require(true_user[msg.sender].admin_status == true, "only admin can add new magazin.");
         require(true_user[magazin_address].login != 0 && true_user[magazin_address].password != 0, "User not allready in sytem.");
         require(magazin_status[magazin_address] == false, "Magazin allready in system.");
-        true_magazin[magazin_address] = magazin(true_user[magazin_address].login, true_user[magazin_address].password, city);
+        uint[] memory id_otsiv;
+        true_magazin[magazin_address] = magazin(true_user[magazin_address].login, true_user[magazin_address].password, city, id_otsiv);
         magazin_status[magazin_address] = true;
         if (zaim_anser == true) {
             uint id_zaim = application_zaim.length;
@@ -195,15 +210,34 @@ contract module1 {
         delete magazin_zaim_id[msg.sender];
     }
     
-    function zaim_magazin(uint id) public {
+    function zaim_magazin(uint id) public payable {
         require(application_zaim[id].status_application == true, "Application not created.");
         require(application_zaim[id].status_complited == false, "Application allready gived.");
+        require(view_value() == true, "Value less.");
+        payable(applications[id].magazin).transfer(msg.value);
+    }
+    
+    function view_value() private view returns(bool) {
+        if (msg.value == 10*10**18) {
+            return (true);
+        }
+        else (false);
+    }
+    
+    function give_otsiv(address magazin, string memory comment, bool plus_or_less) public {
         
     }
     
+    function give_comment(address magazin, string memory comment, bool plus_or_less) public {
+        
+    }
     
+    function view_otsiv(address magazin) private view returns(bool) {
+        
+    }
     
-    
-    
+    function view_comment(address magazin) private view returns(bool) {
+        
+    }
 }
 
