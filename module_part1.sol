@@ -32,6 +32,7 @@ contract module1 {
         address giver;
         address magazin;
         string otsiv_user;
+        uint grade;
         address[] plus;
         address[] less;
         uint[] id_comments;
@@ -78,6 +79,7 @@ contract module1 {
     
     address[] public workers_list;
     Otsiv[] public otsiv;
+    Comment[] public comments;
     Application[] public applications;
     Application_zaim[] public application_zaim;
     
@@ -224,20 +226,125 @@ contract module1 {
         else (false);
     }
     
-    function give_otsiv(address magazin, string memory comment, bool plus_or_less) public {
+    function give_otsiv(address magazin, uint grade, string memory comment, bool plus_or_less) public {
+        require(magazin_status[magazin] == true, "This is not magazin address.");
+        require(grade <= 10 && grade >= 0, "You gived non correct grade.");
+        uint id = otsiv.length;
+        address[] memory plus;
+        address[] memory less;
+        uint[] memory id_comments;
+        if (plus_or_less == true) {
+            plus[plus.length] = msg.sender;
+            otsiv.push(Otsiv(id, msg.sender, magazin, comment, grade, plus, less, id_comments));
+        }
+        else {
+            less[id] = msg.sender;
+            otsiv.push(Otsiv(id, msg.sender, magazin, comment, grade, plus, less, id_comments));
+        }
+        true_magazin[magazin].id_otsiv.push(id);
         
     }
     
-    function give_comment(address magazin, string memory comment, bool plus_or_less) public {
-        
+    function give_comment(uint id_otsiv, string memory comment, bool plus_or_less) public {
+        uint id = comments.length;
+        address[] memory plus;
+        address[] memory less;
+        if (plus_or_less == true) {
+            plus[plus.length] = msg.sender;
+        }
+        else {
+            plus[less.length] = msg.sender;
+        }
+        comments.push(Comment(id, msg.sender, otsiv[id_otsiv].magazin, comment, plus, less));
+        otsiv[id_otsiv].id_comments.push(id);
     }
     
-    function view_otsiv(address magazin) private view returns(bool) {
-        
+    function give_plus_or_less(bool otsiv_or_comment, bool plus_or_less, uint id) public {
+        require(view_get_anser(otsiv_or_comment, id) == true, "You allready give it.");
+        if (otsiv_or_comment == true) {
+            if (plus_or_less == true) {
+                otsiv[id].plus.push(msg.sender);
+            }
+            else {
+                otsiv[id].less.push(msg.sender);
+            }
+        }
+        else {
+            if (plus_or_less == true) {
+                comments[id].plus.push(msg.sender);
+            }
+            else {
+                comments[id].less.push(msg.sender);
+            }
+        }
     }
     
-    function view_comment(address magazin) private view returns(bool) {
-        
+    function return_plus_or_less(bool otsiv_or_comment, bool plus_or_less, uint id) public {
+        if (otsiv_or_comment == true) {
+            
+        }
+        else {
+            
+        }
+    }
+    
+    function serch_anser(bool otsiv_or_comment, bool plus_or_less, uint id) private view returns(bool) {
+        if (otsiv_or_comment == true) {
+            if (plus_or_less == true) {
+                for (uint i = 0; i < otsiv[id].plus.length; i++) {
+                    if (otsiv[id].plus[i] == msg.sender) {
+                        return(true);
+                    }
+                    else {
+                        continue;
+                    }
+                }
+            }
+            else {
+                for (uint i = 0; i < otsiv[id].less.length; i++) {
+                
+                }
+            }
+            return(false);
+        }
+        else {
+            if (plus_or_less == true) {
+                for (uint i = 0; i < otsiv[id].plus.length || i < otsiv[id].less.length; i++) {
+                
+                }
+            }
+            else {
+                for (uint i = 0; i < otsiv[id].plus.length || i < otsiv[id].less.length; i++) {
+                
+                }
+            }
+            return(false);
+        }
+    }
+    
+    function view_get_anser(bool otsiv_or_comment, uint id) private view returns(bool){
+        if (otsiv_or_comment == true) {
+            for (uint i = 0; i < otsiv[id].plus.length || i < otsiv[id].less.length; i++) {
+                if (otsiv[id].plus[i] == msg.sender) {
+                    return(false);
+                }
+                else if (otsiv[id].less[i] == msg.sender) {
+                    return(false);
+                }
+            }
+            return(true);
+        }
+        else if (otsiv_or_comment == false) {
+            for (uint i = 0; i < comments[id].plus.length || i < comments[id].less.length; i++) {
+                if (comments[id].plus[i] == msg.sender) {
+                    return(false);
+                }
+                else if (comments[id].less[i] == msg.sender) {
+                    return(false);
+                }
+            }
+            return(true);
+        }   
     }
 }
 
