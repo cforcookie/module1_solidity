@@ -279,46 +279,96 @@ contract module1 {
         }
     }
     
-    function return_plus_or_less(bool otsiv_or_comment, bool plus_or_less, uint id) public {
+    function return_plus_or_less(bool otsiv_or_comment, uint id) public {
+        require(serch_anser(otsiv_or_comment, id) == true, "You not give plus or less this.");
+        uint i = serch_id(otsiv_or_comment, id);
         if (otsiv_or_comment == true) {
-            
+            if (serch_plus_or_less( otsiv_or_comment, id) == true) {
+                delete otsiv[id].plus[i];
+            }
+            else {
+                delete otsiv[id].less[i];
+            }
         }
         else {
-            
+            if (serch_plus_or_less( otsiv_or_comment, id) == true) {
+                delete comments[id].plus[i];
+            }
+            else {
+                delete comments[id].less[i];
+            }
         }
     }
     
-    function serch_anser(bool otsiv_or_comment, bool plus_or_less, uint id) private view returns(bool) {
+    function serch_plus_or_less(bool otsiv_or_comment, uint id) private view returns(bool) {
         if (otsiv_or_comment == true) {
-            if (plus_or_less == true) {
-                for (uint i = 0; i < otsiv[id].plus.length; i++) {
-                    if (otsiv[id].plus[i] == msg.sender) {
-                        return(true);
-                    }
-                    else {
-                        continue;
-                    }
+            for (uint i = 0; i < otsiv[id].plus.length || i < otsiv[id].less.length; i++) {
+                if (otsiv[id].plus[i] == msg.sender) {
+                    return(true);
+                }
+                else if (otsiv[id].less[i] == msg.sender) {
+                    return(false);
                 }
             }
-            else {
-                for (uint i = 0; i < otsiv[id].less.length; i++) {
-                
+        }
+        else if (otsiv_or_comment == false) {
+            for (uint i = 0; i < comments[id].plus.length || i < comments[id].less.length; i++) {
+                if (comments[id].plus[i] == msg.sender) {
+                    return(true);
+                }
+                else if (comments[id].less[i] == msg.sender) {
+                    return(false);
+                }
+            }
+        }
+    }
+    
+    function serch_anser(bool otsiv_or_comment, uint id) private view returns(bool) {
+        if (otsiv_or_comment == true) {
+            for (uint i = 0; i < otsiv[id].plus.length || i < otsiv[id].less.length; i++) {
+                if (otsiv[id].plus[i] == msg.sender) {
+                    return(true);
+                }
+                else if (otsiv[id].less[i] == msg.sender) {
+                    return(true);
                 }
             }
             return(false);
         }
-        else {
-            if (plus_or_less == true) {
-                for (uint i = 0; i < otsiv[id].plus.length || i < otsiv[id].less.length; i++) {
-                
+        else if (otsiv_or_comment == false) {
+            for (uint i = 0; i < comments[id].plus.length || i < comments[id].less.length; i++) {
+                if (comments[id].plus[i] == msg.sender) {
+                    return(true);
                 }
-            }
-            else {
-                for (uint i = 0; i < otsiv[id].plus.length || i < otsiv[id].less.length; i++) {
-                
+                else if (comments[id].less[i] == msg.sender) {
+                    return(true);
                 }
             }
             return(false);
+        }
+    }
+    
+    function serch_id(bool otsiv_or_comment, uint id) private view returns(uint) {
+        if (otsiv_or_comment == true) {
+            for (uint i = 0; i < otsiv[id].plus.length || i < otsiv[id].less.length; i++) {
+                if (otsiv[id].plus[i] == msg.sender) {
+                    return(i);
+                }
+                else if (otsiv[id].less[i] == msg.sender) {
+                    return(i);
+                }
+            }
+
+        }
+        else if (otsiv_or_comment == false) {
+            for (uint i = 0; i < comments[id].plus.length || i < comments[id].less.length; i++) {
+                if (comments[id].plus[i] == msg.sender) {
+                    return(i);
+                }
+                else if (comments[id].less[i] == msg.sender) {
+                    return(i);
+                }
+            }
         }
     }
     
@@ -347,4 +397,3 @@ contract module1 {
         }   
     }
 }
-
